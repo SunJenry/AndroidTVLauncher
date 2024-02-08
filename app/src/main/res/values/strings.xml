@@ -3,5 +3,6 @@
     <string name="app_header_photo_name">Photo</string>
     <string name="app_header_video_name">Live</string>
     <string name="app_header_app_name">App</string>
+    <string name="app_header_system_app_name">System App</string>
     <string name="app_header_function_name">Function</string>
 </resources>

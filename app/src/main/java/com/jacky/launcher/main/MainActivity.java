@@ -53,7 +53,6 @@ public class MainActivity extends Activity {
         mBrowseFragment = (BrowseFragment) getFragmentManager().findFragmentById(R.id.browse_fragment);
 
         mBrowseFragment.setHeadersState(BrowseFragment.HEADERS_DISABLED);
-        mBrowseFragment.setTitle(getString(R.string.app_name));
 
         prepareBackgroundManager();
         buildRowsAdapter();
@@ -69,9 +68,8 @@ public class MainActivity extends Activity {
     private void buildRowsAdapter() {
         rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
 
-        addPhotoRow();
-        addVideoRow();
-        addAppRow();
+        addThirdAppRow();
+        addSystemAppRow();
         addFunctionRow();
 
         mBrowseFragment.setAdapter(rowsAdapter);
@@ -151,11 +149,25 @@ public class MainActivity extends Activity {
         rowsAdapter.add(new ListRow(header, listRowAdapter));
     }
 
-    private void addAppRow() {
+    private void addThirdAppRow() {
         String headerName = getResources().getString(R.string.app_header_app_name);
         ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new AppCardPresenter());
 
-        ArrayList<AppModel> appDataList = new AppDataManage(mContext).getLaunchAppList();
+        ArrayList<AppModel> appDataList = new AppDataManage(mContext).getLaunchAppList(false);
+        int cardCount = appDataList.size();
+
+        for (int i = 0; i < cardCount; i++) {
+            listRowAdapter.add(appDataList.get(i));
+        }
+        HeaderItem header = new HeaderItem(0, headerName);
+        rowsAdapter.add(new ListRow(header, listRowAdapter));
+    }
+
+    private void addSystemAppRow() {
+        String headerName = getResources().getString(R.string.app_header_system_app_name);
+        ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new AppCardPresenter());
+
+        ArrayList<AppModel> appDataList = new AppDataManage(mContext).getLaunchAppList(true);
         int cardCount = appDataList.size();
 
         for (int i = 0; i < cardCount; i++) {

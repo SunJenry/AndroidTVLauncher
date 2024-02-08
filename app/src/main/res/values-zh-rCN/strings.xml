@@ -4,5 +4,6 @@
     <string name="app_header_photo_name">照片</string>
     <string name="app_header_video_name">直播</string>
     <string name="app_header_app_name">应用</string>
+    <string name="app_header_system_app_name">系统应用</string>
     <string name="app_header_function_name">功能</string>
 </resources>

@@ -3,6 +3,7 @@ package com.jacky.launcher.app;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -20,7 +21,7 @@ public class AppDataManage {
         mContext = context;
     }
 
-    public ArrayList<AppModel> getLaunchAppList() {
+    public ArrayList<AppModel> getLaunchAppList(boolean system) {
         PackageManager localPackageManager = mContext.getPackageManager();
         Intent localIntent = new Intent("android.intent.action.MAIN");
         localIntent.addCategory("android.intent.category.LAUNCHER");
@@ -35,6 +36,11 @@ public class AppDataManage {
             if (!localIterator.hasNext())
                 break;
             ResolveInfo localResolveInfo = (ResolveInfo) localIterator.next();
+
+            if (isSystemApplication(mContext,localResolveInfo.activityInfo.packageName) != system){
+                continue;
+            }
+
             AppModel localAppBean = new AppModel();
             localAppBean.setIcon(localResolveInfo.activityInfo.loadIcon(localPackageManager));
             localAppBean.setName(localResolveInfo.activityInfo.loadLabel(localPackageManager).toString());
@@ -128,5 +134,19 @@ public class AppDataManage {
             }
         }
         return localArrayList;
+    }
+
+    public static boolean isSystemApplication(Context context, String packageName){
+        PackageManager mPackageManager = context.getPackageManager();
+        try {
+            final PackageInfo packageInfo =
+                    mPackageManager.getPackageInfo(packageName, PackageManager.GET_CONFIGURATIONS);
+            if((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM)!=0){
+                return true;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
