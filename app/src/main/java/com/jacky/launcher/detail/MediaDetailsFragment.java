@@ -1,7 +1,6 @@
 package com.jacky.launcher.detail;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v17.leanback.app.BackgroundManager;
@@ -24,7 +23,6 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
-import com.jacky.launcher.video.VideoActivity;
 
 /**
  * @author jacky
@@ -69,9 +67,7 @@ public class MediaDetailsFragment extends DetailsFragment {
             @Override
             public void onActionClicked(Action action) {
                 if (action.getId() == ACTION_WATCH_TRAILER) {
-                    Intent intent = new Intent(getActivity(), VideoActivity.class);
-                    intent.putExtra(VideoActivity.VIDEO, mMediaModel);
-                    startActivity(intent);
+
                 } else {
                     Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
                 }
