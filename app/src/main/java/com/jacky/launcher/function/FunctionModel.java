@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import com.jacky.launcher.R;
 import com.jacky.launcher.app.AppUninstall;
+import com.jacky.launcher.auto.AppAutoLaunchSettingActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +57,13 @@ public class FunctionModel {
         appUninstall.setName("应用卸载");
         appUninstall.setIcon(R.drawable.ic_app_uninstall);
         appUninstall.setIntent(new Intent(context, AppUninstall.class));
-
         functionModels.add(appUninstall);
+
+        FunctionModel appAutoLaunch = new FunctionModel();
+        appAutoLaunch.setName("自启动");
+        appAutoLaunch.setIcon(R.drawable.pic_default);
+        appAutoLaunch.setIntent(new Intent(context, AppAutoLaunchSettingActivity.class));
+        functionModels.add(appAutoLaunch);
 
         return functionModels;
     }

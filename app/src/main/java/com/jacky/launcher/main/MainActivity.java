@@ -2,10 +2,14 @@
 package com.jacky.launcher.main;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
@@ -20,6 +24,8 @@ import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -28,11 +34,14 @@ import com.jacky.launcher.R;
 import com.jacky.launcher.app.AppCardPresenter;
 import com.jacky.launcher.app.AppDataManage;
 import com.jacky.launcher.app.AppModel;
+import com.jacky.launcher.auto.AutoLaunchTool;
 import com.jacky.launcher.detail.MediaDetailsActivity;
 import com.jacky.launcher.detail.MediaModel;
 import com.jacky.launcher.function.FunctionCardPresenter;
 import com.jacky.launcher.function.FunctionModel;
+import com.jacky.launcher.util.Tools;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,10 +53,38 @@ public class MainActivity extends Activity {
     private DisplayMetrics mMetrics;
     private Context mContext;
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private final String TAG = "***MainActivity***";
+
+    private final BroadcastReceiver timeChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (action) {
+                case Intent.ACTION_TIME_CHANGED: {
+                    Log.i(TAG, "ACTION_TIME_CHANGED");
+                    tryAutoLaunch(false);
+                }
+
+                case Intent.ACTION_DATE_CHANGED: {
+                    Log.i(TAG, "ACTION_DATE_CHANGED");
+                }
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "onCreate!");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        try {
+            Process p = Runtime.getRuntime().exec("su");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         mContext = this;
         mBrowseFragment = (BrowseFragment) getFragmentManager().findFragmentById(R.id.browse_fragment);
@@ -56,6 +93,11 @@ public class MainActivity extends Activity {
 
         prepareBackgroundManager();
         buildRowsAdapter();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_TIME_CHANGED);
+        intentFilter.addAction(Intent.ACTION_DATE_CHANGED);
+        registerReceiver(timeChangeReceiver, intentFilter);
     }
 
     private void prepareBackgroundManager() {
@@ -88,11 +130,7 @@ public class MainActivity extends Activity {
                     startActivity(intent, bundle);
                 } else if (item instanceof AppModel) {
                     AppModel appBean = (AppModel) item;
-                    Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(
-                            appBean.getPackageName());
-                    if (launchIntent != null) {
-                        mContext.startActivity(launchIntent);
-                    }
+                    launchApp(appBean.getPackageName());
                 } else if (item instanceof FunctionModel) {
                     FunctionModel functionModel = (FunctionModel) item;
                     Intent intent = functionModel.getIntent();
@@ -102,6 +140,7 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
         mBrowseFragment.setOnItemViewSelectedListener(new OnItemViewSelectedListener() {
             @Override
             public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
@@ -126,6 +165,64 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    private final Runnable autoLaunchRunnable = new Runnable() {
+        @Override
+        public void run() {
+            final String autoLaunchPackageName = AutoLaunchTool.getAutoLaunchPackageName(MainActivity.this);
+            launchApp(autoLaunchPackageName);
+        }
+    };
+
+    private void tryAutoLaunch(boolean useDelay) {
+        handler.removeCallbacks(autoLaunchRunnable);
+
+        final String autoLaunchPackageName = AutoLaunchTool.getAutoLaunchPackageName(this);
+        if (autoLaunchPackageName != null && !autoLaunchPackageName.isEmpty()) {
+            int autoLaunchDelay = 0;
+            if (useDelay) {
+                autoLaunchDelay = AutoLaunchTool.getAutoLaunchDelay(this);
+            }
+
+            Log.i(TAG, "checkAutoLaunch,delay:" + autoLaunchDelay + "s");
+
+            handler.postDelayed(autoLaunchRunnable, autoLaunchDelay * 1000L);
+        }
+    }
+
+    private boolean firstResume = true;
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume!");
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            tryAutoLaunch(true);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
+
+        unregisterReceiver(timeChangeReceiver);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Toast.makeText(this, "当前已经是桌面，无法回退", Toast.LENGTH_SHORT).show();
+    }
+
+    private void launchApp(final String packageName) {
+        Tools.killAppByPackage(this, packageName);
+        Log.i(TAG, "launchApp!");
+        Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        if (launchIntent != null) {
+            mContext.startActivity(launchIntent);
+        }
     }
 
     private void addPhotoRow() {

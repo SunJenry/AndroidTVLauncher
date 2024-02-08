@@ -1,13 +1,20 @@
 package com.jacky.launcher.util;
 
+import static android.content.Context.ACTIVITY_SERVICE;
+
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Environment;
+import android.os.Process;
 import android.os.StatFs;
+import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,10 +22,13 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.jacky.launcher.R;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -263,6 +273,60 @@ public final class Tools {
         Method removeBondMethod = btClass.getMethod("removeBond");
         Boolean returnValue = (Boolean) removeBondMethod.invoke(btDevice);
         return returnValue.booleanValue();
+    }
+
+    public static Drawable getAppIconByPackageName(Context context, String ApkTempPackageName) {
+        Drawable drawable;
+        try {
+            drawable = context.getPackageManager().getApplicationIcon(ApkTempPackageName);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            drawable = ContextCompat.getDrawable(context, R.mipmap.ic_launcher);
+        }
+        return drawable;
+    }
+
+    public static String getAppName(Context context, String ApkPackageName) {
+        String Name = "";
+        ApplicationInfo applicationInfo;
+        PackageManager packageManager = context.getPackageManager();
+        try {
+            applicationInfo = packageManager.getApplicationInfo(ApkPackageName, 0);
+            if (applicationInfo != null) {
+                Name = (String) packageManager.getApplicationLabel(applicationInfo);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+
+            e.printStackTrace();
+        }
+        return Name;
+    }
+
+    public static float convertDpToPx(Context context, float dp) {
+        return dp * context.getResources().getDisplayMetrics().density;
+    }
+
+    public static void killAppByPackage(Context context, String packageToKill) {
+
+        try {
+            java.lang.Process su = Runtime.getRuntime().exec("su");
+
+            ActivityManager manager = (ActivityManager) context.getApplicationContext().getSystemService(ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> activityes = ((ActivityManager) manager).getRunningAppProcesses();
+
+            for (int i = 0; i < activityes.size(); i++) {
+
+                System.out.println("APP: " + i + " " + activityes.get(i).processName);
+
+                if (activityes.get(i).processName.contains(packageToKill)) {
+                    android.os.Process.sendSignal(activityes.get(i).pid, android.os.Process.SIGNAL_KILL);
+                    android.os.Process.killProcess(activityes.get(i).pid);
+                }
+
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
