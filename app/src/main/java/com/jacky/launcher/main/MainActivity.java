@@ -92,7 +92,6 @@ public class MainActivity extends Activity {
         mBrowseFragment.setHeadersState(BrowseFragment.HEADERS_DISABLED);
 
         prepareBackgroundManager();
-        buildRowsAdapter();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_TIME_CHANGED);
@@ -197,6 +196,9 @@ public class MainActivity extends Activity {
     protected void onResume() {
         Log.i(TAG, "onResume!");
         super.onResume();
+
+        buildRowsAdapter();
+
         if (firstResume) {
             firstResume = false;
             tryAutoLaunch(true);
